@@ -1,0 +1,214 @@
+{-# STDLIB_VERSION 3 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+
+#
+# @TODO
+# - Price of device and car creation as data entry or oracle
+# - Use token instead Waves
+# - Sponsorship token
+#
+#
+
+let NONE = "none"
+
+
+#
+# @TODO try with isDefined func
+#
+func numberDataKeyExists(key: String) = {
+    let bool = match getInteger(this, key) {
+        case a:Int => true
+        case _ => false
+    }
+    bool
+}
+
+func getNumberByKey(key: String) = {
+    let num = match getInteger(this, key) {
+        case a:Int => a
+        case _ => 0
+    }
+    num
+}
+
+func getStrByKey(key: String) = {
+    let str = match getString(this, key) {
+        case a:String => a
+        case _ => NONE
+    }
+    str
+}
+
+func getUserBalanceKey(userAddress: String) = {
+  userAddress + "_usr_balance"
+}
+
+func getUserBalanceValue(userAddress: String) = {
+  getNumberByKey(getUserBalanceKey(userAddress))
+}
+
+func getUserBalanceExpirationKey(userAddress: String) = {
+  userAddress + "_usr_balance_expiration"
+}
+
+func getUserBalanceValidToValue(userAddress: String) = {
+  getNumberByKey(getUserBalanceExpirationKey(userAddress))
+}
+
+
+func getDeviceBalanceKey(deviceAddress: String) = {
+  deviceAddress + "_dev_balance"
+}
+
+func getDeviceBalanceValue(deviceAddress: String) = {
+  getNumberByKey(getDeviceBalanceKey(deviceAddress))
+}
+
+func getDevicePriceKey(deviceAddress: String) = {
+  deviceAddress + "_dev_price"
+}
+
+func getDevicePriceValue(deviceAddress: String) = {
+  getNumberByKey(getDevicePriceKey(deviceAddress))
+}
+
+func getAccountCreationPriceKey() = {
+  "account_creation_price"
+}
+
+func getAccountCreationPriceValue() = {
+  getNumberByKey(getAccountCreationPriceKey())
+}
+
+func getDeviceCreationPriceKey() = {
+  "device_creation_price"
+}
+
+func getDeviceCreationPriceValue() = {
+  getNumberByKey(getDeviceCreationPriceKey())
+}
+
+func getAssetIdKey() = {
+  "asset_id"
+}
+
+func getAssetId() = {
+  getStrByKey(getAssetIdKey())
+}
+
+func getAssetExpirationDateKey() = {
+  "asset_expiration_date"
+}
+
+func getAssetExpirationDateValue() = {
+  getNumberByKey(getAssetExpirationDateKey())
+}
+
+
+# what will be the 'timestamp' in X days
+func getTimestampIn(days: Int) = {
+  lastBlock.timestamp + (days * (24*60*60*1000))
+}
+
+func isAssetExpired() = {
+  getAssetExpirationDateValue() - lastBlock.timestamp < 0
+}
+
+
+# - Payment only in SmartKey tokens
+# - Payment cannot be less then account_creation_price. 
+# - Account cannot exists
+#
+# - User balance data record has been added
+# - If caller pay more then this overpayment will be added to his balance
+@Callable(i)
+func createAccount() = {
+  let creationPrice  = getAccountCreationPriceValue()
+  let userBalanceKey = getUserBalanceKey(toBase58String(i.caller.bytes))
+  let assetId        = fromBase58String(getAssetId())
+  let pmt            = extract(i.payment)  # creating variable with all data about a payment attached to the invokation
+  # let userBalanceExpirationKey = getUserBalanceExpirationKey(toBase58String(i.caller.bytes))
+
+  
+  if (!isDefined(pmt.assetId) || pmt.assetId != assetId) then throw("payment in bad tokens")
+  else if ( pmt.amount < creationPrice) then throw("amount cannot be less than account creation price")
+  else if (numberDataKeyExists(userBalanceKey) == true) then throw("user already exist")
+  else {
+    WriteSet([
+      DataEntry(userBalanceKey, pmt.amount - creationPrice)
+      # DataEntry(userBalanceExpirationKey, getTimestampIn(30))
+    ])
+  }
+}
+
+
+
+
+# - Creator has dApp account
+# - The creator has sufficient funds
+# - Device does not exist
+# - Entered valid device address @TODO
+# - Entered valid device price @TODO
+#
+# - Creator account has been charged
+# - Device price data record has been added
+# - Device balance data record has been added
+@Callable(i)
+func createDevice(deviceAddress: String, devicePrice: Int) = {
+  let creationPrice     = getDeviceCreationPriceValue()
+  let deviceBalanceKey  = getDeviceBalanceKey(deviceAddress)
+  let devicePriceKey    = getDevicePriceKey(deviceAddress)
+  let deviceExists      = numberDataKeyExists(deviceBalanceKey)
+  let creatorBalanceKey = getUserBalanceKey(toBase58String(i.caller.bytes))
+  let creatorBalance    = getUserBalanceValue(toBase58String(i.caller.bytes))
+  let creatorExists     = numberDataKeyExists(creatorBalanceKey) # is caller user on whitelist ?
+
+
+  let pmt = extract(i.payment)  # creating variable with all data about a payment attached to the invokation
+
+  if (creatorExists == false) then throw("not allowed")
+  else if (creatorBalance < creationPrice) then throw("not sufficient funds")
+  else if (deviceExists == true) then throw("device already exist")
+
+  else {
+    let newBalance = creatorBalance - creationPrice 
+
+    WriteSet([
+      DataEntry(deviceBalanceKey, 0),
+      DataEntry(devicePriceKey, devicePrice),
+      DataEntry(creatorBalanceKey, newBalance)
+    ])
+  }
+}
+
+# @Callable(i)
+# func resetAccountBalance() = {
+#   let duration = 30 # days
+#   let lastDistributionAt = getLastDistributionAtValue()
+#   let timestamp = lastBlock.timestamp
+#   let daysPassed = (lastBlock.timestamp - lastDistributionAt) / (24*60*60*1000)
+  
+#   if (daysPassed < duration) then throw("to early")
+#   else throw("OK")
+  
+# }
+
+
+#
+# Issue - only one kind of tokens, and only once per 30 days and only when token balance eq 0 (burn before?)
+# How / when set new expDataKey  ????????????
+# Burn - only when isExpired() == true
+#
+@Verifier(tx)
+func verify() = {
+    let correctAssetId = fromBase58String(getAssetId())
+    let assetQuantity = assetBalance(this, correctAssetId)
+
+    match tx {
+      case t: IssueTransaction => true
+      case b: BurnTransaction => b.assetId == correctAssetId && isAssetExpired() && b.quantity == assetQuantity
+      case _ => false
+  }
+}
