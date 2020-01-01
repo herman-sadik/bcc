@@ -5,10 +5,21 @@ class Setup {
   static get DEVICE_CREATION_PRICE() { return 25 * (10 ** 8); } // Should be greater then ACCOUNT_CREATION_PRICE !
   
 
-  constructor() {
+  constructor(debug = false) {
     this.asset_id
     this.fake_asset_id
     this.accounts
+    this.debug = debug
+  }
+
+
+  /*
+   * Display debug msg if debuging is enabled
+   */
+  dd(msg, msg_type = "DEBUG") {
+    if (this.debug) {
+      console.log('[' + msg_type + '] ' + msg )
+    }
   }
 
   /*
@@ -46,7 +57,7 @@ class Setup {
 
     await waitForTx(tx.id);
     this.asset_id = tx.id
-    console.log('[DEBUG] SmartKey tokens has been created | tx_id: ', this.asset_id)
+    this.dd('SmartKey tokens has been created | tx_id: ' + this.asset_id)
 
     return this.asset_id
   }
@@ -63,7 +74,7 @@ class Setup {
 
     let txTransfer = await broadcast(transfer(txObj, accounts.dapp))
     await waitForTx(txTransfer.id)
-    console.log('[DEBUG] + ' + amount + ' tokens (' + token_id + ') has been transfered to ', to)
+    this.dd(amount + ' tokens (' + token_id + ') has been transfered to ' + to)
   }
 
  
@@ -84,7 +95,7 @@ class Setup {
     let txInfo = await broadcast(data(dataArr, this.accounts.dapp))
     await waitForTx(txInfo.id)
 
-    console.log('[DEBUG] asset_id and account_creation_price data entry has been set | tx_id: ' + txInfo.id)
+    this.dd('asset_id and account_creation_price data entry has been set | tx_id: ' + txInfo.id)
   }
 
   /*
@@ -104,7 +115,7 @@ class Setup {
 
     await broadcast(iTx)
     await waitForTx(iTx.id);
-    console.log('[DEBUG] Account ' + caller + '  (' + address(caller) +  ') has been created in dApp | tx_id: ' + iTx.id)
+    this.dd('Account ' + caller + '  (' + address(caller) +  ') has been created in dApp | tx_id: ' + iTx.id)
   }
 
   /*
@@ -124,7 +135,7 @@ class Setup {
 
     await broadcast(iTx)
     await waitForTx(iTx.id);
-    console.log('[DEBUG] Account ' + caller + '  (' + address(caller) + ') has been created in dApp | tx_id: ' + iTx.id)
+    this.dd('Account ' + caller + '  (' + address(caller) + ') has been created in dApp | tx_id: ' + iTx.id)
   }
 
 
@@ -135,7 +146,7 @@ class Setup {
     
     await broadcast(ssTx);
     await waitForTx(ssTx.id)
-    console.log('[DEBUG] Script has been set in dApp | tx_id: ' + ssTx.id)
+    this.dd('Script has been set in dApp | tx_id: ' + ssTx.id)
   }
 
   /*
@@ -157,7 +168,7 @@ class Setup {
 
     await waitForTx(tx.id);
     this.fake_asset_id = tx.id
-    console.log('[DEBUG] FakeSmartKey tokens has been created | tx_id: ', this.fake_asset_id)
+    this.dd('FakeSmartKey tokens has been created | tx_id: ', this.fake_asset_id)
   }
 }
 
