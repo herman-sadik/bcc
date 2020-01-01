@@ -37,7 +37,7 @@ class Setup {
       name: "SmartKey",
       quantity: 100000 * Setup.WVS,
       decimals: 8,
-      reissuable: false,
+      reissuable: true,
       description: "Tokens needed to cooperate with BCC dApp"
     }
 
@@ -148,7 +148,7 @@ class Setup {
       name: "FakeSmartKey",
       quantity: 100000 * Setup.WVS,
       decimals: 8,
-      reissuable: false,
+      reissuable: true,
       description: "Fake Tokens needed to test BCC dApp"
     }
 

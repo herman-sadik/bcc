@@ -183,6 +183,23 @@ func createDevice(deviceAddress: String, devicePrice: Int) = {
   }
 }
 
+
+#
+# allow only when: isAssetExpired && assetBalance == 0 
+#
+@Callable(i)
+func updateAssetExpirationDate() = {
+  let assetId = fromBase58String(getAssetId())
+  let assetQuantity = assetBalance(this, assetId)
+
+  if (!isAssetExpired()) then throw("too early to continue")
+  else if (assetQuantity != 0) then throw("you have to burn all tokens first")
+  else {
+    let newAssetExpDate = getTimestampIn(30)
+    WriteSet([ DataEntry(getAssetExpirationDateKey(), newAssetExpDate) ])
+  }
+}
+
 # @Callable(i)
 # func resetAccountBalance() = {
 #   let duration = 30 # days
@@ -197,9 +214,8 @@ func createDevice(deviceAddress: String, devicePrice: Int) = {
 
 
 #
-# Issue - only one kind of tokens, and only once per 30 days and only when token balance eq 0 (burn before?)
-# How / when set new expDataKey  ????????????
-# Burn - only when isExpired() == true
+#  BurnTransaction - Only BCC tokens && BCC is expired && only all tokens in balance
+#  ReissueTransaction - Only BCC tokens && only When Bcc balance == 0 && BCC is NOT expired yet
 #
 @Verifier(tx)
 func verify() = {
@@ -207,7 +223,7 @@ func verify() = {
     let assetQuantity = assetBalance(this, correctAssetId)
 
     match tx {
-      case t: IssueTransaction => true
+      case r: ReissueTransaction => r.assetId == correctAssetId && !isAssetExpired() && assetQuantity == 0
       case b: BurnTransaction => b.assetId == correctAssetId && isAssetExpired() && b.quantity == assetQuantity
       case _ => false
   }
