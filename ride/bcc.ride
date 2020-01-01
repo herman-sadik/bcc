@@ -5,11 +5,10 @@
 
 #
 # @TODO
-# - Price of device and car creation as data entry or oracle
-# - Use token instead Waves
+# - Price of device and car creation as data entry or oracle (consider)
 # - Sponsorship token
 #
-#
+
 
 let NONE = "none"
 
@@ -129,7 +128,7 @@ func createAccount() = {
   let userBalanceKey = getUserBalanceKey(toBase58String(i.caller.bytes))
   let assetId        = fromBase58String(getAssetId())
   let pmt            = extract(i.payment)  # creating variable with all data about a payment attached to the invokation
-  # let userBalanceExpirationKey = getUserBalanceExpirationKey(toBase58String(i.caller.bytes))
+  let userBalanceExpirationKey = getUserBalanceExpirationKey(toBase58String(i.caller.bytes))
 
   
   if (!isDefined(pmt.assetId) || pmt.assetId != assetId) then throw("payment in bad tokens")
@@ -137,8 +136,8 @@ func createAccount() = {
   else if (numberDataKeyExists(userBalanceKey) == true) then throw("user already exist")
   else {
     WriteSet([
-      DataEntry(userBalanceKey, pmt.amount - creationPrice)
-      # DataEntry(userBalanceExpirationKey, getTimestampIn(30))
+      DataEntry(userBalanceKey, pmt.amount - creationPrice),
+      DataEntry(userBalanceExpirationKey, getAssetExpirationDateValue())
     ])
   }
 }

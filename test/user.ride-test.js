@@ -1,6 +1,7 @@
 const Setup = require('../common/setup').setup
 const getUserBalanceKey = require('../common/helpers').getUserBalanceKey
 const getUserBalanceExpirationKey = require('../common/helpers').getUserBalanceExpirationKey
+const getAssetExpirationDateKey = require('../common/helpers').getAssetExpirationDateKey
 
 describe('BCC dApp - USER', async function () {
 
@@ -54,6 +55,7 @@ describe('BCC dApp - USER', async function () {
 
         expect(broadcast(iTxCreateAccount)).to.be.rejectedWith("amount cannot be less than account creation price")
       })
+
       it('user already exist', async function () {
         const iTxCreateAccount = invokeScript({
           dApp: address(accounts.dapp),
@@ -98,7 +100,8 @@ describe('BCC dApp - USER', async function () {
       })
 
       it('valid #user_balance_expiration', async function () {
-
+        let assetExpirationDateKey = await accountDataByKey(getAssetExpirationDateKey(), address(accounts.dapp))
+        expect(userBalanceExpiration.value).eq(assetExpirationDateKey.value)
       })
 
     })
