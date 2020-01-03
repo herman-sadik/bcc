@@ -5,11 +5,12 @@ class Setup {
   static get DEVICE_CREATION_PRICE() { return 25 * (10 ** 8); } // Should be greater then ACCOUNT_CREATION_PRICE !
   
 
-  constructor(debug = false) {
+  constructor(dapp_account, debug = true) {
     this.asset_id
     this.fake_asset_id
-    this.accounts
+    this.dapp_account = dapp_account
     this.debug = debug
+    this.dd('\n =================== ' + address(dapp_account) + ' =================')
   }
 
 
@@ -22,26 +23,6 @@ class Setup {
     }
   }
 
-  /*
-  * Generate dapp account and other test users
-  */
-  async generateAccounts(acc) {
-    if (acc == undefined) {
-      acc = {
-        dapp: 10 * Setup.WVS,
-        existed: 10 * Setup.WVS,
-        existed_dev: 10 * Setup.WVS,
-        new: 11 * Setup.WVS,
-        poor: 0.01 * Setup.WVS,
-      }
-    }
-
-
-    this.accounts = await setupAccounts(acc);
-
-    return this.accounts
-  }
-
   // TOKEN ISSUE ---------------------------------------------------
   async generateToken() {
     const tokenParams = {
@@ -52,7 +33,7 @@ class Setup {
       description: "Tokens needed to cooperate with BCC dApp"
     }
 
-    const signedIssueTx = issue(tokenParams, this.accounts.dapp)
+    const signedIssueTx = issue(tokenParams, this.dapp_account)
     let tx = await broadcast(signedIssueTx);
 
     await waitForTx(tx.id);
@@ -72,7 +53,7 @@ class Setup {
       assetId: token_id
     }
 
-    let txTransfer = await broadcast(transfer(txObj, accounts.dapp))
+    let txTransfer = await broadcast(transfer(txObj, this.dapp_account))
     await waitForTx(txTransfer.id)
     this.dd(amount + ' tokens (' + token_id + ') has been transfered to ' + to)
   }
@@ -92,57 +73,17 @@ class Setup {
                             ]
     }
 
-    let txInfo = await broadcast(data(dataArr, this.accounts.dapp))
+    let txInfo = await broadcast(data(dataArr, this.dapp_account))
     await waitForTx(txInfo.id)
 
     this.dd('asset_id and account_creation_price data entry has been set | tx_id: ' + txInfo.id)
-  }
-
-  /*
-   * Create valid account in dapp needed for tests
-   * 
-   */
-  async createAccount(accountKey, amount = 0) {
-    const caller = this.accounts[accountKey]
-    
-    const iTx = invokeScript({
-      dApp: address(accounts.dapp),
-      call: {
-        function: "createAccount",
-      },
-      payment: [{ assetId: this.asset_id, amount: amount }]
-    }, caller);
-
-    await broadcast(iTx)
-    await waitForTx(iTx.id);
-    this.dd('Account ' + caller + '  (' + address(caller) +  ') has been created in dApp | tx_id: ' + iTx.id)
-  }
-
-  /*
-   * Create valid account in dapp needed for tests
-   * 
-   */
-  async createDevice(accountKey, deviceAddress = "TEST_DEVICE_ADDRESS", amount = 0) {
-    const caller = this.accounts[accountKey]
-
-    const iTx = invokeScript({
-      dApp: address(accounts.dapp),
-      call: {
-        function: "createDevice",
-        args: [{ type: 'string', value: deviceAddress }, { type: 'integer', value: amount }]
-      }
-    }, caller);
-
-    await broadcast(iTx)
-    await waitForTx(iTx.id);
-    this.dd('Account ' + caller + '  (' + address(caller) + ') has been created in dApp | tx_id: ' + iTx.id)
   }
 
 
   // SET ACCOUNT SCRIPT -------------------------------------------------------
   async setAccountScript() {
     const script = compile(file('bcc.ride'));
-    const ssTx = setScript({ script }, accounts.dapp);
+    const ssTx = setScript({ script }, this.dapp_account);
     
     await broadcast(ssTx);
     await waitForTx(ssTx.id)
@@ -163,12 +104,29 @@ class Setup {
       description: "Fake Tokens needed to test BCC dApp"
     }
 
-    const signedIssueTx = issue(tokenParams, this.accounts.dapp)
+    const signedIssueTx = issue(tokenParams, this.dapp_account)
     let tx = await broadcast(signedIssueTx);
 
     await waitForTx(tx.id);
     this.fake_asset_id = tx.id
     this.dd('FakeSmartKey tokens has been created | tx_id: ', this.fake_asset_id)
+  }
+
+
+  async burnAllTokens(dapp, caller ) {
+    let balance = await assetBalance(this.asset_id, address(dapp))
+
+    const assetParams = {
+      assetId: this.asset_id,
+      quantity: balance,
+      senderPublicKey: publicKey(dapp),
+      fee: 0.005 * Setup.WVS
+    }
+
+    const bTx = burn(assetParams, caller);
+    await broadcast(bTx)
+    await waitForTx(bTx.id)
+
   }
 }
 

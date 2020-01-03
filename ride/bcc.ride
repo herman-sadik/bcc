@@ -52,9 +52,17 @@ func getUserBalanceExpirationKey(userAddress: String) = {
   userAddress + "_usr_balance_expiration"
 }
 
-func getUserBalanceValidToValue(userAddress: String) = {
+func getUserBalanceExpirationValue(userAddress: String) = {
   getNumberByKey(getUserBalanceExpirationKey(userAddress))
 }
+
+func isUserBalanceExpired(userAddress: String) = {
+  getUserBalanceExpirationValue(userAddress) - lastBlock.timestamp < 0
+}
+
+# func getUserBalanceValidToValue(userAddress: String) = {
+#   getNumberByKey(getUserBalanceExpirationKey(userAddress))
+# }
 
 
 func getDeviceBalanceKey(deviceAddress: String) = {
@@ -163,11 +171,13 @@ func createDevice(deviceAddress: String, devicePrice: Int) = {
   let creatorBalanceKey = getUserBalanceKey(toBase58String(i.caller.bytes))
   let creatorBalance    = getUserBalanceValue(toBase58String(i.caller.bytes))
   let creatorExists     = numberDataKeyExists(creatorBalanceKey) # is caller user on whitelist ?
+  let balanceExpired    = isUserBalanceExpired(toBase58String(i.caller.bytes))
 
 
   let pmt = extract(i.payment)  # creating variable with all data about a payment attached to the invokation
 
   if (creatorExists == false) then throw("not allowed")
+  else if (balanceExpired) then throw("balance expired")
   else if (creatorBalance < creationPrice) then throw("not sufficient funds")
   else if (deviceExists == true) then throw("device already exist")
 
