@@ -5,7 +5,7 @@ class Setup {
   static get DEVICE_CREATION_PRICE() { return 25 * (10 ** 8); } // Should be greater then ACCOUNT_CREATION_PRICE !
   
 
-  constructor(dapp_account, debug = true) {
+  constructor(dapp_account, debug = false) {
     this.asset_id
     this.fake_asset_id
     this.dapp_account = dapp_account
@@ -112,22 +112,6 @@ class Setup {
     this.dd('FakeSmartKey tokens has been created | tx_id: ', this.fake_asset_id)
   }
 
-
-  async burnAllTokens(dapp, caller ) {
-    let balance = await assetBalance(this.asset_id, address(dapp))
-
-    const assetParams = {
-      assetId: this.asset_id,
-      quantity: balance,
-      senderPublicKey: publicKey(dapp),
-      fee: 0.005 * Setup.WVS
-    }
-
-    const bTx = burn(assetParams, caller);
-    await broadcast(bTx)
-    await waitForTx(bTx.id)
-
-  }
 }
 
 module.exports.setup = Setup;

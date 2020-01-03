@@ -11,10 +11,10 @@
 
 class SmartAccount {
 
-  constructor(dapp_account, asset_id) {
+  constructor(dapp_account, asset_id, debugEnabled = false) {
     this.dapp_account = dapp_account
     this.asset_id = asset_id
-    this.debugEnabled = true
+    this.debugEnabled = debugEnabled
   }
 
   /*
@@ -52,6 +52,36 @@ class SmartAccount {
     await broadcast(iTx)
     await waitForTx(iTx.id);
     this.dd('Device ' + deviceAddress + ' has been created in dApp | tx_id: ' + iTx.id)
+  }
+
+  async burnAllTokens() {
+    let balance = await assetBalance(this.asset_id, address(this.dapp_account))
+
+    const assetParams = {
+      assetId: this.asset_id,
+      quantity: balance,
+      senderPublicKey: publicKey(this.dapp_account),
+      fee: 0.005 * Setup.WVS
+    }
+
+    const bTx = burn(assetParams, caller);
+    await broadcast(bTx)
+    await waitForTx(bTx.id)
+  }
+
+
+  async updateAssetExpirationDate(caller) {
+    const iTx = invokeScript({
+      dApp: address(this.dapp_account),
+      call: {
+        function: "updateAssetExpirationDate"
+      }
+    }, caller);
+
+    await broadcast(iTx)
+    await waitForTx(iTx.id)
+
+    this.dd('updateAssetExpirationDate has been invoked | tx_id: ' + iTx.id)
   }
 
 
