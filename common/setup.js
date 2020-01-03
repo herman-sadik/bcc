@@ -10,7 +10,7 @@ class Setup {
     this.fake_asset_id
     this.dapp_account = dapp_account
     this.debug = debug
-    this.dd('\n =================== ' + address(dapp_account) + ' =================')
+    this.dd(' =================== ' + address(dapp_account) + ' =================')
   }
 
 

@@ -11,52 +11,6 @@ describe('wallet test suite', async function () {
   this.timeout(100000);
   let setup = new Setup()
 
-  context('data records', async function () {
-    before(async function () {
-      await setup.generateAccounts({ dapp: 10 * Setup.WVS, existed: 10 * Setup.WVS })
-      await setup.generateToken()
-      await setup.setData()
-      await setup.setAccountScript()
-    });
-
-    it('#NOT_EXISTED should be null', async function () {
-      let res = await accountDataByKey("NOT_EXISTED_FOOFOOFOOOOO", address(accounts.dapp))
-      expect(res).be.null
-    })
-
-    it('#asset_id', async function () {
-      let res = await accountDataByKey(getAssetIdKey(), address(accounts.dapp))
-      expect(res).not.be.null
-      expect(res.type).eq('string')
-    })
-
-    it('#asset_expiration_date', async function () {
-      let res = await accountDataByKey(getAssetExpirationDateKey(), address(accounts.dapp))
-      expect(res).not.be.null
-      expect(res.type).eq('integer')
-    })
-
-    it('#account_creation_price', async function () {
-      let res = await accountDataByKey(getAccountCreationPriceKey(), address(accounts.dapp))
-      expect(res).not.be.null
-      expect(res.type).eq('integer')
-    })
-
-    it('#device_creation_price', async function () {
-      let res = await accountDataByKey(getDeviceCreationPriceKey(), address(accounts.dapp))
-      expect(res).not.be.null
-      expect(res.type).eq('integer')
-    })
-
-  })
-
-  context('functions', async function () {
-    it('.createAccount')
-    it('.createDevice')
-
-  })
-
-
   /*
   * @TODO - REFACTOR !!!
   */
