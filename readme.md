@@ -12,7 +12,9 @@ After successful account creation process in dApp will be create following recor
 - `USER_ADDRESS_usr_balance`
 - `USER_ADDRESS_usr_balance_expiration`
 
-Last key will be responsible for keeping 30 day tokens life cycle in user account. The default value is taken from `asset_expiration_date`. After timestamp from this field user balance will be zeroed. 
+Last key will be responsible for keeping 30 day tokens life cycle in user account. The default value is taken from `asset_expiration_date`. After timestamp from this field user will not able to use dApp features.
+When user with expired assets will call `deposit()` function then his balance will be zeroed and filled with amount of BCC tokens in attached payment and `USER_ADDRESS_usr_balance_expiration` will be set to current value from `asset_expiration_date` data field.
+If `deposit()` function will be called on account with not expired asset then amount attached in payment will be added to the current user balance.
 
 Created user is able to adding new devices and make a reservations.
 Price for creating new device is determined in `device_creation_price` and this time user will not attach the payment but have to have sufficient and not expired balance in dApp to proceed.

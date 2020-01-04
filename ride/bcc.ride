@@ -222,6 +222,30 @@ func updateAssetExpirationDate() = {
 # }
 
 
+
+@Callable(i)
+func deposit() = {
+  let pmt = extract(i.payment)
+  let userBalanceKey = getUserBalanceKey(toBase58String(i.caller.bytes))
+  let userBalance    = getUserBalanceValue(toBase58String(i.caller.bytes))
+  let userExists     = numberDataKeyExists(userBalanceKey) # is caller user on whitelist ?
+  let assetId        = fromBase58String(getAssetId())
+  let balanceExpired = isUserBalanceExpired(toBase58String(i.caller.bytes))
+  let userBalanceExpirationKey = getUserBalanceExpirationKey(toBase58String(i.caller.bytes))
+
+  if (userExists == false) then throw("not allowed")
+  else if (!isDefined(pmt.assetId) || pmt.assetId != assetId) then throw("payment in bad tokens")
+  else {
+    let newBalance = if balanceExpired then pmt.amount else userBalance + pmt.amount
+    let newBalanceExp = if balanceExpired then getAssetExpirationDateValue() else userBalanceExpirationKey
+
+    WriteSet([ 
+      DataEntry(userBalanceKey, newBalance),
+      DataEntry(userBalanceExpirationKey, newBalanceExp)
+    ])
+  }
+}
+
 #
 #  BurnTransaction - Only BCC tokens && BCC is expired && only all tokens in balance
 #  ReissueTransaction - Only BCC tokens && only When Bcc balance == 0 && BCC is NOT expired yet

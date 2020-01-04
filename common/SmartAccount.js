@@ -1,3 +1,4 @@
+const Setup = require('./setup').setup
 /*
 * 
 */
@@ -54,7 +55,7 @@ class SmartAccount {
     this.dd('Device ' + deviceAddress + ' has been created in dApp | tx_id: ' + iTx.id)
   }
 
-  async burnAllTokens() {
+  async burnAllTokens(caller) {
     let balance = await assetBalance(this.asset_id, address(this.dapp_account))
 
     const assetParams = {
@@ -84,6 +85,16 @@ class SmartAccount {
     this.dd('updateAssetExpirationDate has been invoked | tx_id: ' + iTx.id)
   }
 
+  async deposit(caller, amount = 0) {
+    const iTx = invokeScript({
+      dApp: address(this.dapp_account),
+      call: { function: "deposit" },
+      payment: [{ assetId: this.asset_id, amount: amount }]
+    }, caller);
+
+    await broadcast(iTx)
+    await waitForTx(iTx.id);    
+  }
 
   /*
   * Display debug msg if debuging is enabled
