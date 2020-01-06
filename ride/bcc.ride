@@ -226,18 +226,20 @@ func updateAssetExpirationDate() = {
 @Callable(i)
 func deposit() = {
   let pmt = extract(i.payment)
-  let userBalanceKey = getUserBalanceKey(toBase58String(i.caller.bytes))
-  let userBalance    = getUserBalanceValue(toBase58String(i.caller.bytes))
+  let userAddress    = toBase58String(i.caller.bytes)
+  let userBalanceKey = getUserBalanceKey(userAddress)
+  let userBalance    = getUserBalanceValue(userAddress)
   let userExists     = numberDataKeyExists(userBalanceKey) # is caller user on whitelist ?
   let assetId        = fromBase58String(getAssetId())
-  let balanceExpired = isUserBalanceExpired(toBase58String(i.caller.bytes))
-  let userBalanceExpirationKey = getUserBalanceExpirationKey(toBase58String(i.caller.bytes))
+  let balanceExpired = isUserBalanceExpired(userAddress)
+  let userBalanceExpirationKey = getUserBalanceExpirationKey(userAddress)
+  let userBalanceExpiration = getUserBalanceExpirationValue(userAddress)
 
   if (userExists == false) then throw("not allowed")
   else if (!isDefined(pmt.assetId) || pmt.assetId != assetId) then throw("payment in bad tokens")
   else {
     let newBalance = if balanceExpired then pmt.amount else userBalance + pmt.amount
-    let newBalanceExp = if balanceExpired then getAssetExpirationDateValue() else userBalanceExpirationKey
+    let newBalanceExp = if balanceExpired then getAssetExpirationDateValue() else userBalanceExpiration
 
     WriteSet([ 
       DataEntry(userBalanceKey, newBalance),

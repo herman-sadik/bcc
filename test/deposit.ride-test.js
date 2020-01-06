@@ -37,12 +37,10 @@ describe('Deposit tokens', async function () {
     exp_dApp = new SmartAccount(exp_setup.dapp_account, exp_setup.asset_id)
     await exp_dApp.createAccount(accounts.existed, Setup.ACCOUNT_CREATION_PRICE + 100)
 
-    dateOffset = (24 * 60 * 60 * 1000) * (Setup.EXP_TOKEN_DAYS - 10) 
-    exp_date = Date.now() - dateOffset
 
     setup = new Setup(accounts.dapp_expired)
     await setup.generateToken()
-    await setup.setData(exp_date)
+    await setup.setData()
     await setup.transferTokens(accounts.existed, 100)
     await setup.setAccountScript()
 
@@ -86,29 +84,30 @@ describe('Deposit tokens', async function () {
 
     before(async () => {
       const iTx = invokeScript({
-        dApp: address(setup.dapp_account),
+        dApp: address(exp_setup.dapp_account),
         call: { function: "deposit" },
-        payment: [{ assetId: setup.asset_id, amount: amount }]
+        payment: [{ assetId: exp_setup.asset_id, amount: amount }]
       }, accounts.existed);
 
       await broadcast(iTx)
       await waitForTx(iTx.id);
     })
 
-    it('#USER_ADDRESS_usr_balance has been changed', async () => {
+    it('#USER_ADDRESS_usr_balance has been replaced', async () => {
       /*
         Zeroed and filled with amount attached in payment
       */
       const userBalanceKey = getUserBalanceKey(address(accounts.existed))
-      userBalance = await accountDataByKey(userBalanceKey, address(setup.dapp_account))
+      userBalance = await accountDataByKey(userBalanceKey, address(exp_setup.dapp_account))
 
       expect(userBalance.value).eq(amount)
     })
+
     it('#USER_ADDRESS_usr_balance_expiration has been updated', async () => {
       let userBalanceExpirationKey = getUserBalanceExpirationKey(address(accounts.existed))
 
-      let assetExpirationDate = await accountDataByKey(getAssetExpirationDateKey(), address(setup.dapp_account))
-      let userBalanceExpiration = await accountDataByKey(userBalanceExpirationKey, address(setup.dapp_account))
+      let assetExpirationDate = await accountDataByKey(getAssetExpirationDateKey(), address(exp_setup.dapp_account))
+      let userBalanceExpiration = await accountDataByKey(userBalanceExpirationKey, address(exp_setup.dapp_account))
       expect(userBalanceExpiration.value).eq(assetExpirationDate.value)
     })
   })
@@ -127,16 +126,16 @@ describe('Deposit tokens', async function () {
       beforeUserBalance = await accountDataByKey(userBalanceKey, address(setup.dapp_account))
       beforeUserBalanceExp = await accountDataByKey(userBalanceExpirationKey, address(setup.dapp_account))
 
-      await dApp.deposit(accounts.existed, amount)
+      await dApp.deposit(accounts.existed, amount, 1)
     })
 
     it('#USER_ADDRESS_usr_balance_expiration is NOT updated', async () => {
       let newUserBalanceExp = await accountDataByKey(userBalanceExpirationKey, address(setup.dapp_account))
-
+      
       expect(beforeUserBalanceExp.value).eq(newUserBalanceExp.value)
     })
 
-    it('#USER_ADDRESS_usr_balance has been changed', async () => {
+    it('#USER_ADDRESS_usr_balance has been summed', async () => {
       /*
         NOT Zeroed. Amount attached in payment is added to current balance
       */
