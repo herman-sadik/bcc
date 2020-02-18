@@ -96,6 +96,19 @@ class SmartAccount {
     await waitForTx(iTx.id);    
   }
 
+  async reserve(caller, deviceAddress, date) {
+    const iTx = invokeScript({
+      dApp: address(this.dapp_account),
+      call: { 
+        function: "reserve",
+        args: [{ type: 'string', value: deviceAddress }, { type: 'integer', value: date }]
+      }
+    }, caller);
+
+    await broadcast(iTx)
+    await waitForTx(iTx.id);
+  }
+
   /*
   * Display debug msg if debuging is enabled
   */
