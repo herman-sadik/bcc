@@ -12,7 +12,7 @@
 
 let NONE = "none"
                 
-let startDate = 1577833200000 # 01.01.2020 00:00, TimeZone: local
+# let startDate = 1577833200000 # 01.01.2020 00:00, TimeZone: local
 
 #
 # @TODO try with isDefined func
@@ -39,6 +39,14 @@ func getStrByKey(key: String) = {
         case _ => NONE
     }
     str
+}
+
+func getDappStartDateKey() = {
+  "dapp_start_date"
+}
+
+func getDappStartDateValue() = {
+  getNumberByKey(getDappStartDateKey())
 }
 
 func getUserBalanceKey(userAddress: String) = {
@@ -126,9 +134,17 @@ func isAssetExpired() = {
 
 # retrun day number from startDate
 func dayNumber(timestamp:Int) = {
+  let startDate = getDappStartDateValue()
+
   if (timestamp < startDate) then throw("too early")
   else
     (timestamp - startDate) / (24*60*60*1000)
+}
+
+
+func beginOfDayTimestamp(timestamp: Int) = {
+  # 86400 is the number of seconds in one day
+  timestamp - (timestamp % 86400)
 }
 
 
@@ -243,12 +259,14 @@ func reserve(deviceAddress: String, date:Int) = {
   let deviceBalance  = getDeviceBalanceValue(deviceAddress)
   let devicePrice    = getDevicePriceValue(deviceAddress)
   let dayNr          = dayNumber(date)
+
+  
   
   if (userExists == false) then throw("user does not exist")
   else if (deviceExists == false) then throw("device does not exist")
   else if (isUserBalanceExpired(userAddress)) then throw("balance expired")
   else if (userBalance < devicePrice) then throw("not sufficient funds")
-  else if (date < startDate) then throw("too early date given") # refactor
+  else if (beginOfDayTimestamp(date) < beginOfDayTimestamp(lastBlock.timestamp)) then throw("too early date given") # shoud I consider GMT + ?
   else if (getDeviceReservationValue(deviceAddress, dayNr) != NONE) then throw("reservation for given day already exist")
   else {
     let newUserBalance = userBalance - devicePrice
