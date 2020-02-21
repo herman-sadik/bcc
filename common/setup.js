@@ -69,7 +69,8 @@ class Setup {
     const dataArr = { data: [ { key: "asset_id", value: this.asset_id },
                               { key: "asset_expiration_date", value: exp_date },
                               { key: "account_creation_price", value: Setup.ACCOUNT_CREATION_PRICE },
-                              { key: "device_creation_price", value: Setup.DEVICE_CREATION_PRICE }
+                              { key: "device_creation_price", value: Setup.DEVICE_CREATION_PRICE },
+                              { key: "dapp_start_date", value: 1577833200000 } // # 01.01.2020 00:00, TimeZone: local
                             ]
     }
 
